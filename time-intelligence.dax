@@ -1,0 +1,31 @@
+// ============================================
+// TIME INTELLIGENCE MEASURES
+// ============================================
+
+// Previous Period Comparisons
+Sales Last Year = 
+CALCULATE (
+    [Total Sales],
+    SAMEPERIODLASTYEAR ( DimDate[Date] )
+)
+
+Sales vs Last Year = 
+[Total Sales] - [Sales Last Year]
+
+Sales vs Last Year % = 
+DIVIDE (
+    [Sales vs Last Year],
+    [Sales Last Year],
+    0
+)
+
+// Year-to-Date
+Sales YTD = 
+TOTALYTD ( [Total Sales], DimDate[Date] )
+
+// Moving Average
+Sales 3M Moving Avg = 
+AVERAGEX (
+    DATESINPERIOD ( DimDate[Date], LASTDATE ( DimDate[Date] ), -3, MONTH ),
+    [Total Sales]
+)

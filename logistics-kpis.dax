@@ -1,0 +1,50 @@
+// ============================================
+// LOGISTICS KPIs - DAX Measures
+// Simple examples for logistics analytics
+// ============================================
+
+// ---------------------------------------------
+// Basic Cost Measures
+// ---------------------------------------------
+
+Total Cost = 
+SUM ( FactInvoice[Amount] )
+
+Average Cost = 
+AVERAGE ( FactInvoice[Amount] )
+
+Cost Count = 
+COUNTROWS ( FactInvoice )
+
+// ---------------------------------------------
+// Time Intelligence
+// ---------------------------------------------
+
+Cost Last Month = 
+CALCULATE (
+    [Total Cost],
+    DATEADD ( DimDate[Date], -1, MONTH )
+)
+
+Cost YTD = 
+TOTALYTD (
+    [Total Cost],
+    DimDate[Date]
+)
+
+// ---------------------------------------------
+// Percentage Calculations
+// ---------------------------------------------
+
+Cost % of Total = 
+DIVIDE (
+    [Total Cost],
+    CALCULATE ( [Total Cost], ALL ( DimProduct ) ),
+    0
+)
+```
+
+**File → Save As:**
+```
+Filename: logistics-kpis.dax
+Location: /home/deck/github-projects/powerbi-dax-samples/
