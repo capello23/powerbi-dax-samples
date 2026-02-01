@@ -35,7 +35,7 @@ Star schema with:
 Power BI Developer | Data Analyst
 
 📧 k.szelukowski@gmail.com  
-💼 [LinkedIn](https://linkedin.com/in/capello23)
+💼 [LinkedIn](https://linkedin.com/in/kszelukowski)
 
 ## 📝 License
 
