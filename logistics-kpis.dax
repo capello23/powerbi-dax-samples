@@ -42,9 +42,3 @@ DIVIDE (
     CALCULATE ( [Total Cost], ALL ( DimProduct ) ),
     0
 )
-```
-
-**File → Save As:**
-```
-Filename: logistics-kpis.dax
-Location: /home/deck/github-projects/powerbi-dax-samples/
