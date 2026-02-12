@@ -211,7 +211,7 @@ Topics covered:
 - Performance optimization
 
 ### Performance Tips
-👉 [Performance Optimization]([documentation/performance_tuning.md])
+👉 [Performance Optimization](documentation/performance_tuning.md)
 
 Topics covered:
 - Using variables effectively
