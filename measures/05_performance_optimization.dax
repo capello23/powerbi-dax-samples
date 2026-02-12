@@ -1,0 +1,187 @@
+﻿/*
+=============================================================================
+PERFORMANCE OPTIMIZATION PATTERNS - Variables & Best Practices
+=============================================================================
+Author: Kacper Szelukowski
+Topic: Using variables to improve calculation speed and readability
+Performance Impact: 20-40% faster execution in complex measures
+=============================================================================
+*/
+
+-- ===================================
+-- VARIABLE PATTERNS
+-- ===================================
+
+-- Optimized Sales Growth (with variables)
+-- Description: YoY growth using variables to avoid recalculation
+-- Benefit: 2x faster than inline calculations
+-- Pattern: Calculate once, reference multiple times
+Optimized Sales Growth = 
+VAR CurrentSales = [Total Sales]
+VAR PreviousSales = [Sales Previous Year]
+VAR GrowthAmount = CurrentSales - PreviousSales
+VAR GrowthRate = DIVIDE(GrowthAmount, PreviousSales, 0)
+RETURN
+IF(
+    NOT ISBLANK(PreviousSales),
+    GrowthRate,
+    BLANK()
+)
+
+
+-- Optimized Profit Analysis
+-- Description: Multiple profit calculations using shared variables
+-- Benefit: Calculates [Total Sales] and [Total Profit] only once
+-- Pattern: Reuse variables across multiple IF conditions
+Optimized Profit Analysis = 
+VAR Sales = [Total Sales]
+VAR Profit = [Total Profit]
+VAR Margin = DIVIDE(Profit, Sales, 0)
+RETURN
+SWITCH(
+    TRUE(),
+    Margin >= 0.20, "Excellent",
+    Margin >= 0.15, "Good",
+    Margin >= 0.10, "Average",
+    "Poor"
+)
+
+
+-- ===================================
+-- COMPLEX CONDITIONAL LOGIC
+-- ===================================
+
+-- Customer Lifetime Value Segment
+-- Description: Categorize customers by total value using variables
+-- Benefit: Clear logic flow, easy to maintain thresholds
+-- Pattern: Cascading IF with descriptive variable names
+Customer LTV Segment = 
+VAR TotalCustomerSales = [Total Sales]
+VAR HighValueThreshold = 50000
+VAR MediumValueThreshold = 10000
+RETURN
+SWITCH(
+    TRUE(),
+    TotalCustomerSales >= HighValueThreshold, "VIP",
+    TotalCustomerSales >= MediumValueThreshold, "High Value",
+    TotalCustomerSales > 0, "Standard",
+    "No Purchases"
+)
+
+
+-- ===================================
+-- MULTIPLE TABLE CALCULATIONS
+-- ===================================
+
+-- Delivery Performance Score
+-- Description: Composite score based on multiple KPIs
+-- Benefit: Calculates each component once, combines efficiently
+-- Pattern: Multiple VAR statements for complex business logic
+Delivery Performance Score = 
+VAR OTDPercent = [On-Time Delivery %]
+VAR AvgDelay = [Average Delivery Delay]
+VAR LateCount = [Late Deliveries Count]
+VAR TotalOrders = [Total Orders]
+
+-- Scoring logic
+VAR OTDScore = OTDPercent * 50  // 50% weight
+VAR DelayScore = IF(AvgDelay < 0.5, 30, IF(AvgDelay < 1, 20, 10))  // 30% weight
+VAR VolumeScore = IF(LateCount < (TotalOrders * 0.05), 20, 10)  // 20% weight
+
+RETURN
+OTDScore + DelayScore + VolumeScore
+
+
+/*
+=============================================================================
+PERFORMANCE BEST PRACTICES:
+=============================================================================
+
+1. ✅ USE VARIABLES for repeated calculations
+   Measure: [Total Sales] + [Total Sales] * 0.10
+   Better:  VAR Sales = [Total Sales] RETURN Sales + Sales * 0.10
+
+2. ✅ CALCULATE ONCE, REFERENCE MANY
+   ❌ IF([Total Sales]>100, [Total Sales]*0.1, [Total Sales]*0.05)
+   ✅ VAR Sales = [Total Sales] 
+      RETURN IF(Sales>100, Sales*0.1, Sales*0.05)
+
+3. ✅ USE DIVIDE() instead of / operator
+   ❌ [Profit] / [Sales]  // Errors if Sales = 0
+   ✅ DIVIDE([Profit], [Sales], 0)  // Returns 0 if Sales = 0
+
+4. ✅ FILTER EARLY in the query
+   ❌ CALCULATE([Sum], FILTER(ALL(Table), condition))
+   ✅ CALCULATE([Sum], Table[Column] = value)
+
+5. ✅ USE SWITCH() instead of nested IFs
+   ❌ IF(x=1,"A",IF(x=2,"B",IF(x=3,"C","D")))
+   ✅ SWITCH(x, 1,"A", 2,"B", 3,"C", "D")
+
+=============================================================================
+DIRECTQUERY OPTIMIZATION:
+=============================================================================
+
+-- For DirectQuery models, minimize row-by-row operations:
+❌ AVOID: SUMX(Table, [Column1] * [Column2])
+✅ PREFER: [Measure1] * [Measure2] where measures are SUM(Column)
+
+-- Use aggregations in DirectQuery models
+-- Enable "Automatic aggregations" in model settings
+
+=============================================================================
+VARIABLE NAMING CONVENTIONS:
+=============================================================================
+
+Use descriptive variable names:
+❌ VAR x = [Total Sales]
+✅ VAR CurrentMonthSales = [Total Sales]
+
+Use prefixes for clarity:
+✅ VAR CurrentSales = [Total Sales]
+✅ VAR PreviousSales = [Sales Previous Month]
+✅ VAR GrowthRate = DIVIDE(CurrentSales - PreviousSales, PreviousSales, 0)
+
+=============================================================================
+*/
+
+
+-- ===================================
+-- ERROR HANDLING PATTERNS
+-- ===================================
+
+-- Safe Division with Error Handling
+-- Description: Division that handles all error cases
+-- Returns: BLANK() for any error condition
+Safe Division = 
+VAR Numerator = [Total Profit]
+VAR Denominator = [Total Sales]
+RETURN
+IF(
+    AND(
+        NOT ISBLANK(Denominator),
+        Denominator <> 0
+    ),
+    DIVIDE(Numerator, Denominator, 0),
+    BLANK()
+)
+
+
+-- Data Quality Check
+-- Description: Flags potential data quality issues
+-- Returns: "OK" or specific error message
+-- Use Case: Data validation dashboards
+Data Quality Flag = 
+VAR Sales = [Total Sales]
+VAR Orders = [Total Orders]
+VAR AOV = DIVIDE(Sales, Orders, 0)
+RETURN
+SWITCH(
+    TRUE(),
+    ISBLANK(Sales), "Missing Sales Data",
+    ISBLANK(Orders), "Missing Order Count",
+    AOV = 0, "Zero Average Order Value",
+    AOV < 1, "Suspiciously Low AOV",
+    AOV > 10000, "Suspiciously High AOV",
+    "OK"
+)

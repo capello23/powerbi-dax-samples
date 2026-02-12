@@ -1,0 +1,129 @@
+﻿/*
+=============================================================================
+DELIVERY PERFORMANCE MEASURES - Logistics KPIs
+=============================================================================
+Author: Kacper Szelukowski
+Use Case: Supply chain monitoring, carrier performance, SLA tracking
+Data Requirements: 
+  - Fact_Orders[is_late] - Boolean flag
+  - Fact_Orders[delivery_delay_days] - Numeric delay
+=============================================================================
+*/
+
+-- ===================================
+-- ON-TIME DELIVERY METRICS
+-- ===================================
+
+-- On-Time Delivery %
+-- Description: Percentage of orders delivered on time
+-- Formula: (On-Time Orders / Total Orders) * 100
+-- Target: Typically 95%+
+-- Format: Percentage (0.00%)
+On-Time Delivery % = 
+VAR OnTimeOrders = 
+    CALCULATE(
+        COUNTROWS(Fact_Orders),
+        Fact_Orders[is_late] = FALSE
+    )
+VAR TotalOrders = COUNTROWS(Fact_Orders)
+RETURN
+DIVIDE(OnTimeOrders, TotalOrders, 0)
+
+
+-- Late Deliveries Count
+-- Description: Number of orders delivered late
+-- Use Case: Tracking absolute numbers for investigation
+-- Format: Whole number (#,##0)
+Late Deliveries Count = 
+CALCULATE(
+    COUNTROWS(Fact_Orders),
+    Fact_Orders[is_late] = TRUE
+)
+
+
+-- Late Delivery Rate %
+-- Description: Percentage of orders delivered late
+-- Formula: (Late Orders / Total Orders) * 100
+-- Format: Percentage (0.00%)
+Late Delivery Rate % = 
+DIVIDE([Late Deliveries Count], [Total Orders], 0)
+
+
+-- ===================================
+-- DELAY ANALYSIS
+-- ===================================
+
+-- Average Delivery Delay
+-- Description: Average delay in days across all orders
+-- Note: Includes negative values (early deliveries)
+-- Format: Decimal (0.00)
+-- Use Case: Identifying systematic delays
+Average Delivery Delay = 
+AVERAGE(Fact_Orders[delivery_delay_days])
+
+
+-- Average Delay (Late Orders Only)
+-- Description: Average delay for orders that were late
+-- Excludes: On-time and early deliveries
+-- Format: Decimal (0.00 days)
+Average Delay Late Orders = 
+CALCULATE(
+    AVERAGE(Fact_Orders[delivery_delay_days]),
+    Fact_Orders[is_late] = TRUE
+)
+
+
+-- ===================================
+-- TREND ANALYSIS
+-- ===================================
+
+-- On-Time Delivery % Previous Month
+-- Description: OTD% from previous month for comparison
+-- Use Case: Month-over-month trend analysis
+On-Time Delivery % PM = 
+CALCULATE(
+    [On-Time Delivery %],
+    PREVIOUSMONTH(DimDate[Date])
+)
+
+
+-- OTD Trend (MoM Change)
+-- Description: Change in OTD% compared to previous month
+-- Format: Percentage points (0.0pp)
+-- Example: 92% → 94% = +2.0pp improvement
+OTD Trend MoM = 
+VAR CurrentOTD = [On-Time Delivery %]
+VAR PreviousOTD = [On-Time Delivery % PM]
+RETURN
+IF(
+    NOT ISBLANK(PreviousOTD),
+    CurrentOTD - PreviousOTD,
+    BLANK()
+)
+
+
+/*
+=============================================================================
+CONDITIONAL FORMATTING SUGGESTIONS:
+=============================================================================
+
+On-Time Delivery %:
+  - Green: >= 95%
+  - Yellow: 90-95%
+  - Red: < 90%
+
+Average Delivery Delay:
+  - Green: < 0.5 days
+  - Yellow: 0.5-1.5 days
+  - Red: > 1.5 days
+
+=============================================================================
+CARRIER PERFORMANCE EXAMPLE:
+=============================================================================
+
+-- On-Time Delivery by Carrier (for Table visual)
+-- Rows: Fact_Orders[shipping_mode]
+-- Values: [Total Orders], [On-Time Delivery %], [Average Delivery Delay]
+
+=============================================================================
+*/

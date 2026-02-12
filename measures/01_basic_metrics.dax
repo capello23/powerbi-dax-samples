@@ -1,0 +1,74 @@
+﻿/*
+=============================================================================
+BASIC METRICS - Essential KPIs for Business Analytics
+=============================================================================
+Author: Kacper Szelukowski
+Use Case: Executive dashboards, sales reporting, financial analysis
+Data Model: Star schema with Fact_Orders table
+=============================================================================
+*/
+
+-- ===================================
+-- SALES METRICS
+-- ===================================
+
+-- Total Sales
+-- Description: Sum of all sales transactions
+-- Format: Currency ($#,##0)
+Total Sales = 
+SUM(Fact_Orders[sales])
+
+
+-- Total Orders
+-- Description: Count of distinct orders/transactions
+-- Format: Whole number (#,##0)
+Total Orders = 
+COUNTROWS(Fact_Orders)
+
+
+-- Average Order Value (AOV)
+-- Description: Average sales per order
+-- Formula: Total Sales / Total Orders
+-- Format: Currency ($#,##0.00)
+Average Order Value = 
+DIVIDE([Total Sales], [Total Orders], 0)
+
+
+-- ===================================
+-- PROFIT METRICS
+-- ===================================
+
+-- Total Profit
+-- Description: Sum of profit/benefit from all orders
+-- Format: Currency ($#,##0)
+Total Profit = 
+SUM(Fact_Orders[benefit_per_order])
+
+
+-- Profit Margin %
+-- Description: Profit as percentage of sales
+-- Formula: (Total Profit / Total Sales) * 100
+-- Format: Percentage (0.00%)
+Profit Margin % = 
+DIVIDE([Total Profit], [Total Sales], 0)
+
+
+-- ===================================
+-- QUANTITY METRICS
+-- ===================================
+
+-- Total Quantity Sold
+-- Description: Sum of all items sold across orders
+-- Format: Whole number (#,##0)
+Total Quantity Sold = 
+SUM(Fact_Orders[order_item_quantity])
+
+
+/*
+=============================================================================
+USAGE NOTES:
+- Adjust table and column names to match your data model
+- Use DIVIDE() instead of / to handle division by zero
+- Add formatting in Power BI measure properties
+=============================================================================
+*/

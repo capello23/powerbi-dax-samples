@@ -1,0 +1,188 @@
+﻿/*
+=============================================================================
+ADVANCED FILTERING PATTERNS - CALCULATE & FILTER Functions
+=============================================================================
+Author: Kacper Szelukowski
+Use Case: Complex business logic, dynamic segmentation, custom filters
+Techniques: CALCULATE, FILTER, ALL, TOPN, KEEPFILTERS
+=============================================================================
+*/
+
+-- ===================================
+-- TOP N PATTERNS
+-- ===================================
+
+-- Top 10 Products Sales
+-- Description: Sales from top 10 best-selling products only
+-- Pattern: TOPN + ALL (removes product filter)
+-- Use Case: Focus analysis on best performers
+Top 10 Products Sales = 
+CALCULATE(
+    [Total Sales],
+    TOPN(
+        10,
+        ALL(DimProduct[product_name]),
+        [Total Sales],
+        DESC
+    )
+)
+
+
+-- Top 10 Products List
+-- Description: Returns comma-separated list of top 10 products
+-- Use Case: Dynamic text display in card visual
+-- Format: Text
+Top 10 Products List = 
+CONCATENATEX(
+    TOPN(
+        10,
+        ALL(DimProduct[product_name]),
+        [Total Sales],
+        DESC
+    ),
+    DimProduct[product_name],
+    ", ",
+    [Total Sales],
+    DESC
+)
+
+
+-- ===================================
+-- CUSTOM SEGMENTATION
+-- ===================================
+
+-- Sales High Value Customers
+-- Description: Sales from customers with total sales > $10,000
+-- Pattern: FILTER + ALL (dynamic threshold)
+-- Use Case: VIP customer analysis
+Sales High Value Customers = 
+CALCULATE(
+    [Total Sales],
+    FILTER(
+        ALL(DimCustomer),
+        [Total Sales] > 10000
+    )
+)
+
+
+-- Sales Above Average Products
+-- Description: Sales from products with above-average sales
+-- Pattern: Dynamic threshold using AVERAGEX
+-- Use Case: Focus on outperformers
+Sales Above Average Products = 
+VAR AverageSales = 
+    AVERAGEX(
+        ALL(DimProduct[product_name]),
+        [Total Sales]
+    )
+RETURN
+CALCULATE(
+    [Total Sales],
+    FILTER(
+        ALL(DimProduct[product_name]),
+        [Total Sales] > AverageSales
+    )
+)
+
+
+-- ===================================
+-- CONDITIONAL AGGREGATIONS
+-- ===================================
+
+-- High Value Orders (> $500)
+-- Description: Count of orders with value exceeding $500
+-- Pattern: CALCULATE with column filter
+-- Use Case: Premium order tracking
+High Value Orders = 
+CALCULATE(
+    COUNTROWS(Fact_Orders),
+    Fact_Orders[sales] > 500
+)
+
+
+-- Sales Weekend vs Weekday
+-- Description: Sales split by weekend flag
+-- Pattern: CALCULATE with date table filter
+-- Requires: DimDate[IsWeekend] column (TRUE/FALSE)
+Sales Weekend = 
+CALCULATE(
+    [Total Sales],
+    DimDate[IsWeekend] = TRUE
+)
+
+Sales Weekday = 
+CALCULATE(
+    [Total Sales],
+    DimDate[IsWeekend] = FALSE
+)
+
+
+-- ===================================
+-- MULTIPLE FILTERS
+-- ===================================
+
+-- Sales Premium Segment Late Deliveries
+-- Description: Sales from premium customers with late deliveries
+-- Pattern: Multiple CALCULATE filters (AND logic)
+-- Use Case: Identifying high-impact issues
+Sales Premium Late = 
+CALCULATE(
+    [Total Sales],
+    DimCustomer[customer_segment] = "Corporate",
+    Fact_Orders[is_late] = TRUE
+)
+
+
+-- Sales Excluding Cancelled
+-- Description: Sales excluding cancelled/returned orders
+-- Pattern: Negative filter condition
+-- Requires: Fact_Orders[order_status] column
+Sales Excluding Cancelled = 
+CALCULATE(
+    [Total Sales],
+    Fact_Orders[order_status] <> "Cancelled"
+)
+
+
+/*
+=============================================================================
+PERFORMANCE TIPS:
+=============================================================================
+
+1. Use ALL() instead of ALL(Table) when possible
+   ❌ SLOW: ALL(DimProduct)
+   ✅ FAST: ALL(DimProduct[product_name])
+
+2. Filter early in the calculation
+   ❌ SLOW: Calculate total then filter
+   ✅ FAST: Filter table then calculate
+
+3. Use variables to avoid recalculation
+   ❌ SLOW: [Total Sales] called multiple times
+   ✅ FAST: VAR Sales = [Total Sales], reference var
+
+4. KEEPFILTERS vs ALL
+   - Use KEEPFILTERS to respect existing filters
+   - Use ALL to remove all filters and start fresh
+
+=============================================================================
+COMMON PATTERNS:
+=============================================================================
+
+-- KEEPFILTERS Pattern (respects user selections)
+Sales Current Selection = 
+CALCULATE(
+    [Total Sales],
+    KEEPFILTERS(DimProduct[category_name] = "Electronics")
+)
+
+-- ALL Pattern (ignores user selections)
+Sales All Electronics = 
+CALCULATE(
+    [Total Sales],
+    ALL(DimProduct[category_name]),
+    DimProduct[category_name] = "Electronics"
+)
+
+=============================================================================
+*/

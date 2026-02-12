@@ -1,0 +1,123 @@
+﻿/*
+=============================================================================
+TIME INTELLIGENCE MEASURES - Trend Analysis & Comparisons
+=============================================================================
+Author: Kacper Szelukowski
+Use Case: YoY/MoM growth, trend analysis, forecasting
+Requirements: DimDate table marked as Date Table
+=============================================================================
+*/
+
+-- ===================================
+-- PREVIOUS PERIOD MEASURES
+-- ===================================
+
+-- Sales Previous Month
+-- Description: Sales from previous month
+-- Used in: MoM Growth calculation
+Sales Previous Month = 
+CALCULATE(
+    [Total Sales],
+    PREVIOUSMONTH(DimDate[Date])
+)
+
+
+-- Sales Previous Year
+-- Description: Sales from same period last year
+-- Used in: YoY Growth calculation
+-- Alternative: Use DATEADD(DimDate[Date], -1, YEAR)
+Sales Previous Year = 
+CALCULATE(
+    [Total Sales],
+    SAMEPERIODLASTYEAR(DimDate[Date])
+)
+
+
+-- ===================================
+-- GROWTH METRICS
+-- ===================================
+
+-- Sales MoM Growth %
+-- Description: Month-over-Month growth percentage
+-- Formula: ((Current - Previous) / Previous) * 100
+-- Format: Percentage (0.0%)
+-- Note: Returns BLANK if no previous month data
+Sales MoM Growth % = 
+VAR CurrentMonth = [Total Sales]
+VAR PreviousMonth = [Sales Previous Month]
+RETURN
+IF(
+    NOT ISBLANK(PreviousMonth) && PreviousMonth <> 0,
+    DIVIDE(CurrentMonth - PreviousMonth, PreviousMonth, 0),
+    BLANK()
+)
+
+
+-- Sales YoY Growth %
+-- Description: Year-over-Year growth percentage
+-- Formula: ((Current Year - Previous Year) / Previous Year) * 100
+-- Format: Percentage (0.0%)
+-- Note: Returns BLANK if no previous year data
+Sales YoY Growth % = 
+VAR CurrentYear = [Total Sales]
+VAR PreviousYear = [Sales Previous Year]
+RETURN
+IF(
+    NOT ISBLANK(PreviousYear) && PreviousYear <> 0,
+    DIVIDE(CurrentYear - PreviousYear, PreviousYear, 0),
+    BLANK()
+)
+
+
+-- ===================================
+-- YEAR-TO-DATE (YTD) MEASURES
+-- ===================================
+
+-- Sales YTD
+-- Description: Cumulative sales from start of year to current date
+-- Use Case: Track progress against annual targets
+-- Format: Currency ($#,##0)
+Sales YTD = 
+TOTALYTD([Total Sales], DimDate[Date])
+
+
+/*
+=============================================================================
+ADVANCED PATTERNS:
+=============================================================================
+
+-- Sales Quarter-to-Date (QTD)
+Sales QTD = 
+TOTALQTD([Total Sales], DimDate[Date])
+
+
+-- Sales Month-to-Date (MTD)
+Sales MTD = 
+TOTALMTD([Total Sales], DimDate[Date])
+
+
+-- Moving Average (3 months)
+Sales 3M Moving Avg = 
+AVERAGEX(
+    DATESINPERIOD(
+        DimDate[Date],
+        LASTDATE(DimDate[Date]),
+        -3,
+        MONTH
+    ),
+    [Total Sales]
+)
+
+
+-- Running Total (All Time)
+Sales Running Total = 
+CALCULATE(
+    [Total Sales],
+    FILTER(
+        ALL(DimDate[Date]),
+        DimDate[Date] <= MAX(DimDate[Date])
+    )
+)
+
+=============================================================================
+*/
